@@ -1,0 +1,49 @@
+Comparing the model's native vocabulary against the product enum.
+
+====================================================================
+NATIVE 6-LEVEL (what train_v4.py reported): 21,546 rows, 6 classes
+====================================================================
+     10,676   49.5%  Mid-Senior level
+      6,878   31.9%  Entry level
+      2,190   10.2%  Associate
+        957    4.4%  Director
+        496    2.3%  Executive
+        349    1.6%  Internship
+  accuracy = 72.4%   macro-F1 = 63.5%
+  majority baseline = 49.5%   lift = +22.8 pts
+  95% gate: NOT ACHIEVABLE at any confidence
+
+  confusion (rows = truth, cols = predicted)
+               Associate     Director  Entry level    Executive   Internship  Mid-Senior 
+  Associate          313           14          596            6            7        1,254
+  Director             3          572           31           40            1          310
+  Entry lev           93           11        4,975            7           23        1,769
+  Executive            1           37           21          258            1          178
+  Internshi            2            2           55            1          257           32
+  Mid-Senio          117          117        1,179           35           13        9,215
+
+====================================================================
+3-BAND PRODUCT ENUM (the handover number): 21,546 rows, 3 classes
+====================================================================
+     12,866   59.7%  Mid-Senior
+      7,227   33.5%  Entry
+      1,453    6.7%  Senior
+  accuracy = 80.0%   macro-F1 = 76.6%
+  majority baseline = 59.7%   lift = +20.2 pts
+  95% gate: threshold 0.900 -> 95.1% @ 22.7% coverage
+
+  confusion (rows = truth, cols = predicted)
+                   Entry   Mid-Senior       Senior
+  Entry            4,968        2,236           23
+  Mid-Senio        1,371       11,320          175
+  Senior              44          470          939
+
+====================================================================
+VERDICT
+====================================================================
+  native 6-level : 72.4% accuracy, 63.5% macro-F1, +22.8 lift
+  3-band product : 80.0% accuracy, 76.6% macro-F1, +20.2 lift
+  collapsing 6->3 moves accuracy +7.6 points and lift -2.6
+
+  Lift is the honest comparison. Accuracy always rises when classes merge,
+  because merging removes errors without the model improving.

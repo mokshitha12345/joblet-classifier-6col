@@ -1,0 +1,67 @@
+# Daily hybrid classification, triggered after ingestion.
+#
+# This workflow is JUST AN ORCHESTRATOR. It runs on GitHub's free CPU runner and
+# does NO model work itself (GitHub runners have no GPU). It:
+#   1. kicks Tier 1 -- the keyword SQL -- to catch the obvious new jobs, then
+#   2. calls the Runpod serverless endpoint, which wakes a GPU, runs the model
+#      over the rest, and scales back to zero.
+#
+# SECRETS (repo Settings -> Secrets and variables -> Actions):
+#   SUPABASE_URL                 jobs project (tfbjiyknoagcxjzeoqzw)
+#   SUPABASE_SERVICE_ROLE_KEY    jobs project service role
+#   RUNPOD_API_KEY               from runpod.io -> Settings -> API Keys
+#   RUNPOD_ENDPOINT_ID           the serverless endpoint id
+# None of these are ever committed; .gitignore blocks .env files.
+
+name: daily-classify
+
+on:
+  schedule:
+    # 03:00 UTC daily. MUST be after your ingestion window finishes. Adjust to
+    # sit ~30 min after ingestion so new rows exist before Tier 1 runs.
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}          # manual "Run workflow" button for testing
+
+concurrency:
+  group: daily-classify          # never let two runs overlap
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      # --- Tier 1: keyword SQL over new rows -----------------------------
+      # Drains classify_6col_keyword_chunk() until it returns 0. Cheap, in-DB,
+      # no GPU. This must finish before Tier 2 so the model only sees residual.
+      - name: Tier 1 - keyword classification
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          for i in $(seq 1 200); do
+            n=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/classify_6col_keyword_chunk" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" -d '{}')
+            echo "chunk $i -> $n rows"
+            [ "$n" = "0" ] && break
+          done
+
+      # --- Tier 2: trigger the GPU model on Runpod serverless ------------
+      # /runsync blocks until the worker finishes and returns its summary, so the
+      # workflow log shows how many rows were classified. The worker itself pulls
+      # the NULL rows, so we pass only a cap.
+      - name: Tier 2 - ML classification on Runpod
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RUNPOD_ENDPOINT_ID: ${{ secrets.RUNPOD_ENDPOINT_ID }}
+        run: |
+          resp=$(curl -s -X POST \
+            "https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync" \
+            -H "Authorization: Bearer $RUNPOD_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"input": {"max_rows": 50000, "batch": 256}}')
+          echo "$resp"
+          # fail the job if the worker reported an error
+          echo "$resp" | grep -q '"error"' && exit 1 || true

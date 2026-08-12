@@ -1,0 +1,106 @@
+variant D: 32,278 of 53,823 rows kept (60%)
+
+
+======================================================================
+INDUSTRY: 32,278 labelled rows (100.0% of the set), 15 classes
+      7,406   22.9%  Technology & IT
+      5,599   17.3%  Business Services & Consulting
+      3,775   11.7%  Healthcare & Caregiving
+      3,175    9.8%  Finance & Banking
+      2,785    8.6%  Retail & E-commerce
+      2,172    6.7%  Logistics & Transportation
+      2,045    6.3%  Construction & Real Estate
+      1,489    4.6%  Marketing & Media
+      1,249    3.9%  Education & Research
+      1,033    3.2%  Legal & Government
+        659    2.0%  Creative & Design
+        467    1.4%  Manufacturing & Industrial
+        220    0.7%  Hospitality & Travel
+        184    0.6%  Energy & Utilities
+         20    0.1%  Agriculture & Primary
+  HONEST (grouped) accuracy=86.3%   macro-F1=76.3%
+  majority-class baseline=22.9%   lift=+63.3 pts
+  95%-target threshold=0.755 -> 95.0% acc @ 68.1% coverage
+  saved model_industry_v4.pkl
+
+======================================================================
+ROLE: 32,278 labelled rows (100.0% of the set), 25 classes
+      3,383   10.5%  Healthcare Professional
+      3,310   10.3%  Others
+      3,115    9.7%  Accountant & Finance
+      2,852    8.8%  Sales Representative
+      2,768    8.6%  Software Developer
+      2,168    6.7%  Construction & Real Estate
+      2,147    6.7%  Driver & Logistics
+      2,095    6.5%  Data Analyst
+      1,397    4.3%  Marketing Specialist
+      1,244    3.9%  Teacher & Educator
+      1,028    3.2%  Legal Professional
+        920    2.9%  Project Manager
+        870    2.7%  Consultant
+        762    2.4%  Executive
+        749    2.3%  Designer
+        575    1.8%  Customer Service Representative
+        535    1.7%  QA Engineer
+        526    1.6%  HR Specialist
+        498    1.5%  IT Specialist
+        351    1.1%  Product Manager
+        236    0.7%  Data Engineer
+        231    0.7%  DevOps Engineer
+        224    0.7%  Cybersecurity Specialist
+        179    0.6%  Data Scientist
+        115    0.4%  Machine Learning Engineer
+  HONEST (grouped) accuracy=88.1%   macro-F1=87.6%
+  majority-class baseline=10.5%   lift=+77.6 pts
+  95%-target threshold=0.690 -> 95.1% acc @ 76.4% coverage
+  saved model_role_v4.pkl
+
+======================================================================
+JOB_TYPE: 28,677 labelled rows (88.8% of the set), 7 classes
+     22,876   79.8%  Full-time
+      3,600   12.6%  Contract
+      1,516    5.3%  Part-time
+        248    0.9%  Internship
+        246    0.9%  Temporary
+        109    0.4%  Other
+         82    0.3%  Volunteer
+  HONEST (grouped) accuracy=88.8%   macro-F1=58.5%
+  majority-class baseline=79.8%   lift=+9.1 pts
+  95%-target threshold=0.830 -> 95.0% acc @ 75.6% coverage
+  saved model_job_type_v4.pkl
+
+======================================================================
+EXPERIENCE_BAND: 21,546 labelled rows (66.8% of the set), 6 classes
+     10,676   49.5%  Mid-Senior level
+      6,878   31.9%  Entry level
+      2,190   10.2%  Associate
+        957    4.4%  Director
+        496    2.3%  Executive
+        349    1.6%  Internship
+  HONEST (grouped) accuracy=72.4%   macro-F1=63.5%
+  majority-class baseline=49.5%   lift=+22.8 pts
+  95%-target threshold=0.300 -> 0.0% acc @ 100.0% coverage
+  saved model_experience_band_v4.pkl
+  note: remote_type negatives are inferred from an unticked LinkedIn checkbox, not an explicit On-site value.
+
+======================================================================
+REMOTE_TYPE: 28,677 labelled rows (88.8% of the set), 2 classes
+     23,820   83.1%  Not-remote
+      4,857   16.9%  Remote
+  HONEST (grouped) accuracy=89.2%   macro-F1=77.2%
+  majority-class baseline=83.1%   lift=+6.2 pts
+  95%-target threshold=0.810 -> 95.1% acc @ 77.3% coverage
+  saved model_remote_type_v4.pkl
+
+======================================================================
+SUMMARY
+======================================================================
+column                 rows  classes  accuracy  baseline    lift
+industry             32,278       15     86.3%     22.9%  +63.3
+role                 32,278       25     88.1%     10.5%  +77.6
+job_type             28,677        7     88.8%     79.8%   +9.1
+experience_band      21,546        6     72.4%     49.5%  +22.8
+remote_type          28,677        2     89.2%     83.1%   +6.2
+
+collar: derived from role, not trained (91.6% coverage, see build_training_v4.py)
+TRAIN V4 DONE

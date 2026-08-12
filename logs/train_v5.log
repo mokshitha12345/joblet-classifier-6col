@@ -1,0 +1,80 @@
+variant D: 32,278 of 53,823 rows
+
+========================================================================
+JOB_TYPE: 28,486 rows, 5 classes
+     22,876   80.3%  Full-time
+      3,600   12.6%  Contract
+      1,516    5.3%  Part-time
+        248    0.9%  Internship
+        246    0.9%  Temporary
+  accuracy=89.1%  macro-F1=59.4%  kappa=0.624  baseline=80.3%  lift=+8.8
+  calibration split: 5,674 rows, group-disjoint from training
+  95% gate: threshold 0.820 -> 95.0% precision @ 78.9% coverage
+
+              precision    recall  f1-score   support
+
+    Contract      0.822     0.623     0.709      3600
+   Full-time      0.903     0.974     0.937     22876
+  Internship      0.587     0.407     0.481       248
+   Part-time      0.829     0.473     0.602      1516
+   Temporary      0.720     0.146     0.243       246
+
+    accuracy                          0.891     28486
+   macro avg      0.772     0.525     0.594     28486
+weighted avg      0.885     0.891     0.880     28486
+
+  saved models/model_job_type_v5.pkl
+
+========================================================================
+EXPERIENCE_LEVEL: 21,546 rows, 4 classes
+     12,866   59.7%  Mid
+      7,227   33.5%  Entry
+        957    4.4%  Senior
+        496    2.3%  Executive
+  accuracy=79.4%  macro-F1=70.9%  kappa=0.595  baseline=59.7%  lift=+19.7
+  calibration split: 4,297 rows, group-disjoint from training
+  95% gate: threshold 0.910 -> 95.5% precision @ 20.0% coverage
+
+              precision    recall  f1-score   support
+
+       Entry      0.777     0.688     0.730      7227
+   Executive      0.753     0.510     0.608       496
+         Mid      0.804     0.882     0.841     12866
+      Senior      0.773     0.568     0.655       957
+
+    accuracy                          0.794     21546
+   macro avg      0.777     0.662     0.709     21546
+weighted avg      0.792     0.794     0.790     21546
+
+  saved models/model_experience_level_v5.pkl
+
+========================================================================
+COLLAR: 28,968 rows, 2 classes
+     21,270   73.4%  White
+      7,698   26.6%  Blue
+  accuracy=96.7%  macro-F1=95.7%  kappa=0.915  baseline=73.4%  lift=+23.3
+  calibration split: 5,816 rows, group-disjoint from training
+  95% gate: threshold 0.200 -> 96.9% precision @ 100.0% coverage
+
+              precision    recall  f1-score   support
+
+        Blue      0.947     0.927     0.937      7698
+       White      0.974     0.981     0.978     21270
+
+    accuracy                          0.967     28968
+   macro avg      0.961     0.954     0.957     28968
+weighted avg      0.967     0.967     0.967     28968
+
+  saved models/model_collar_v5.pkl
+
+========================================================================
+SUMMARY -- handover vocabularies
+========================================================================
+field                    rows  cls     acc  macroF1   kappa    base    lift
+job_type               28,486    5   89.1%    59.4%   0.624   80.3%   +8.8
+experience_level       21,546    4   79.4%    70.9%   0.595   59.7%  +19.7
+collar                 28,968    2   96.7%    95.7%   0.915   73.4%  +23.3
+
+remote_mode: NOT TRAINED -- no Hybrid or true On-site exists in this label source.
+job_type: 5 of 6 classes -- 'Per diem' has no LinkedIn category.
+DONE

@@ -1,0 +1,27 @@
+========================================================================
+REMOTE_MODE: 7,609 labelled rows of 32,278 (23.6%), 3 classes
+  24,669 rows left Unknown (ambiguous or silent) -- not imputed
+      4,724   62.1%  Remote
+      1,616   21.2%  On-site
+      1,269   16.7%  Hybrid
+
+  accuracy=98.2%  macro-F1=98.0%  kappa=0.966  baseline=62.1%  lift=+36.1
+  calibration split: 1,516 rows, group-disjoint
+  95% gate: threshold 0.200 -> 97.8% @ 100.0% coverage
+
+              precision    recall  f1-score   support
+
+      Hybrid      0.995     0.987     0.991      1269
+     On-site      0.972     0.953     0.963      1616
+      Remote      0.981     0.990     0.986      4724
+
+    accuracy                          0.982      7609
+   macro avg      0.983     0.977     0.980      7609
+weighted avg      0.982     0.982     0.982      7609
+
+  saved models/model_remote_mode_v5.pkl
+
+!! These labels are text-derived. The accuracy above measures how well
+   the model reproduces explicit statements in the description. It is a
+   TRAINING result, not an independent one -- grade it against the
+   handover's 3,073 annotator-labelled rows before quoting it.

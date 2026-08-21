@@ -34,6 +34,10 @@ ROOT = os.path.dirname(HERE)
 MODELS = os.path.join(ROOT, "models")
 sys.path.insert(0, HERE)
 from guardrails import apply_guardrails, should_dual
+try:
+    from guardrails_4col import apply_4col_guardrails
+except Exception:
+    apply_4col_guardrails = None
 
 # column -> model file. Order here is the output order.
 HEADS = [
@@ -110,17 +114,33 @@ def predict_one(models, emb_model, title, desc=""):
                     "review": bool(r["thr"]) and r["conf"] < r["thr"],
                     "alt": r["top2"] if dual else None, "note": ""}
 
+    # Apply the rule/guardrail layer to the 4 new columns. THIS is what the
+    # --csv path used to skip -- the fix that takes experience senior 8%->100%,
+    # fixes office-collar, and makes remote_mode rule-based instead of the broken
+    # model output.
+    m4 = {c: (raw[c]["top1"] if c in raw else "") for c in
+          ("job_type", "experience_level", "collar", "remote_mode")}
+    if apply_4col_guardrails is not None:
+        jt, ex, co, rm, _notes = apply_4col_guardrails(
+            title, desc, m4["job_type"], m4["experience_level"],
+            m4["collar"], m4["remote_mode"])
+        m4 = {"job_type": jt, "experience_level": ex, "collar": co, "remote_mode": rm}
+
     for col in ("job_type", "experience_level", "collar", "remote_mode"):
         if col not in raw:
             out[col] = {"value": "", "conf": 0.0, "review": True,
                         "alt": None, "note": "model_missing"}
             continue
         r = raw[col]
-        review = True if not r["gatable"] else r["conf"] < r["thr"]
-        note = "" if r["gatable"] else "ungatable"
-        if col in PROVISIONAL:
-            note = (note + ";" if note else "") + "PROVISIONAL:" + PROVISIONAL[col]
-        out[col] = {"value": r["top1"], "conf": round(r["conf"]*100, 1),
+        value = m4[col]
+        # remote_mode is now fully rule-based; a changed value means a rule fired.
+        rule_fired = (col == "remote_mode") or (value != r["top1"])
+        if rule_fired:
+            review, note = False, "rule"
+        else:
+            review = True if not r["gatable"] else r["conf"] < r["thr"]
+            note = "" if r["gatable"] else "ungatable"
+        out[col] = {"value": value, "conf": round(r["conf"]*100, 1),
                     "review": review, "alt": None, "note": note}
     return out
 
@@ -130,11 +150,6 @@ COLUMNS = [c for c, _ in HEADS]
 # One encode() call for the WHOLE batch (this is where a GPU earns its rent;
 # row-at-a-time wastes it entirely), then each head runs over the full matrix at
 # once, then the keyword rules override per row. Returns a plain dict per row.
-try:
-    from guardrails_4col import apply_4col_guardrails
-except Exception:
-    apply_4col_guardrails = None
-
 def predict_batch(models, emb_model, rows, encode_batch=256):
     texts = [(clean(r.get("title", "")) + " . " + clean(r.get("description", ""))[:600]).strip()
              for r in rows]
@@ -152,6 +167,11 @@ def predict_batch(models, emb_model, rows, encode_batch=256):
     for i, r in enumerate(rows):
         rec = {c: (str(head[c][0][i]) if c in head else "") for c in COLUMNS}
         rec["_conf"] = float(head["role"][1][i]) if "role" in head else 0.0
+        # industry/role guardrails (data-entry trap, cybersecurity, director-of-X),
+        # same as predict_one applies.
+        if "industry" in rec and "role" in rec:
+            ind, role, _why = apply_guardrails(r.get("title", ""), rec["industry"], rec["role"])
+            rec["industry"], rec["role"] = ind, role
         # keyword rules override the four target fields (Uber->Contract, nurse->Blue,
         # explicit title terms, etc). Same logic as guardrails_4col.py.
         if apply_4col_guardrails:

@@ -68,9 +68,12 @@ begin
         when t ~ '(farm|agricultur|\ycrop\y|livestock|forestry|fisher|landscap|greenhouse|harvest|ranch)' then 'Agriculture & Primary'
         when t ~ '(retail|cashier|store|sales associate|merchandis|stocker)' then 'Retail & E-commerce'
         else null end as new_ind,
-      -- COLLAR --------------------------------------------------------------
+      -- COLLAR: clinical -> white -> blue (same precedence as guardrails_4col).
+      -- The white row must come BEFORE the trades row so "Warehouse Manager" /
+      -- "Construction Project Manager" resolve to White, not Blue.
       case
         when t ~ '\y(nurse|rn|lpn|cna|physician|surgeon|therapist|pharmacist|paramedic|emt|caregiver|phlebotom|patient care|home health|medical assistant|dental hygienist)\y' then 'Blue'
+        when t ~ '\y(engineer|developer|programmer|architect|analyst|scientist|accountant|bookkeeper|auditor|actuary|underwriter|controller|economist|consultant|attorney|lawyer|paralegal|counsel|manager|director|planner|designer|strategist|recruiter|marketer)\y' then 'White'
         when t ~ '\y(driver|driving|cdl|trucker|warehouse|forklift|welder|plumber|electrician|mechanic|labou?rer|carpenter|roofer|janitor|custodian|cleaner|housekeep|security guard|assembler|machinist|picker|packer|construction|maintenance|cook|chef|server|bartender|barista|cashier|stocker|courier|delivery|landscap)\y' then 'Blue'
         else null end as new_collar,
       -- REMOTE_MODE ---------------------------------------------------------

@@ -33,18 +33,22 @@ jobs:
     steps:
       # --- Tier 1: keyword SQL over new rows -----------------------------
       # Drains classify_6col_keyword_chunk() until it returns 0. Cheap, in-DB,
-      # no GPU. This must finish before Tier 2 so the model only sees residual.
-      - name: Tier 1 - keyword classification
+      # no GPU. Marker-based (remote_mode IS NULL), so it reliably catches every
+      # newly-ingested row -- unlike the one-time cursor sweep in sql/02.
+      # Fills remote_mode for ALL new rows by rule (feed flag + text). The ML tier
+      # (Tier 2) then does industry/role/collar/job_type/experience via its own
+      # marker (classified_6col_at IS NULL), applying the guardrail rules.
+      - name: Tier 1 - remote_mode by rules
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           for i in $(seq 1 200); do
-            n=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/classify_6col_keyword_chunk" \
+            n=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/fill_remote_mode_chunk" \
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Content-Type: application/json" -d '{}')
-            echo "chunk $i -> $n rows"
+              -H "Content-Type: application/json" -d '{"p_limit": 30000}')
+            echo "remote chunk $i -> $n rows"
             [ "$n" = "0" ] && break
           done
 

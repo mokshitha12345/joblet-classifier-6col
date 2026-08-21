@@ -42,14 +42,14 @@ def main():
     models = P.load_models()
     enc = SentenceTransformer(next(iter(models.values()))["embedding_model"])
 
-    # ---- pull unclassified rows (what the real ML would process) ----
+    # ---- pull a representative slice of LIVE jobs (read-only; never writes) ----
     print(f"pulling up to {args.limit:,} rows from the database ...", flush=True)
     rows, last = [], ""
     while len(rows) < args.limit:
         take = min(args.read, args.limit - len(rows))
         page = (sb.table(TABLE)
                   .select("id,title,description")
-                  .is_("remote_mode", "null")
+                  .eq("is_active", True)
                   .gt("id", last).order("id").limit(take).execute().data)
         if not page:
             break

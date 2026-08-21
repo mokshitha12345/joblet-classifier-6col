@@ -1,7 +1,7 @@
 """Runpod Serverless handler: the daily Tier-2 worker.
 
 Invoked by the GitHub Actions cron after ingestion. Wakes the GPU, drains rows
-where remote_mode IS NULL (batched encode + one bulk RPC write per batch),
+where classified_6col_at IS NULL (batched encode + one bulk RPC write per batch),
 scales back to zero. Same fast path as scripts/run_backfill.py.
 
 Requires apply_6col_batch() from sql/03_bulk_update_function.sql.
@@ -40,21 +40,27 @@ def handler(event):
     encode   = int(cfg.get("encode", 256))
     dry_run  = bool(cfg.get("dry_run", False))
 
-    t0 = time.time(); done = 0
+    t0 = time.time(); done = 0; last_id = ""
     while done < max_rows:
         take = min(read, max_rows - done)
+        # Keyset cursor so dry-run (which never stamps) still advances instead of
+        # re-reading the same page.
         rows = (_SB.table(TABLE)
                   .select("id,title,description,jobType")
-                  .is_("remote_mode", "null")
+                  .is_("classified_6col_at", "null")     # Tier-2 queue marker
+                  .gt("id", last_id)
                   .order("id").limit(take).execute().data)
         if not rows:
             break
+        last_id = rows[-1]["id"]
         preds = P.predict_batch(_MODELS, _ENC, rows, encode_batch=encode)
         if not dry_run:
+            # remote_mode is rule-owned (sql/04); the ML tier never writes it.
             updates = [{
                 "id": r["id"],
+                "industry":         pr["industry"] or None,
+                "role":             pr["role"] or None,
                 "collar":           pr["collar"] or None,
-                "remote_mode":      pr["remote_mode"] or None,
                 "experience_level": pr["experience_level"] or None,
                 "job_type":         pr["job_type"] or None,
             } for r, pr in zip(rows, preds)]
